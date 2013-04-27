@@ -174,7 +174,7 @@ public class MapLoader extends JavaPlugin {
 		
 		w.save();
 		
-		loader = new Loader(l, r, command.getName().equals("hyperload"));
+		loader = command.getName().equals("hyperload") ? new HyperLoader(l, r) : new Loader(l, r) ;
 		loader.start();
 
 		return true;
@@ -182,15 +182,13 @@ public class MapLoader extends JavaPlugin {
 
 	private class Loader extends Thread {
 
-		private boolean terminate;
-		private Location l;
-		private int r;
-		private boolean hyper;
+		protected boolean terminate;
+		protected Location l;
+		protected int r;
 
-		public Loader(Location l, int r, boolean hyper) {
+		public Loader(Location l, int r) {
 			this.l = l;
 			this.r = r;
-			this.hyper = hyper;
 		}
 
 		public void terminate() {
@@ -219,15 +217,10 @@ public class MapLoader extends JavaPlugin {
 							xLoc = l.getChunk().getX() + x;
 							zLoc = l.getChunk().getZ() + z;
 							cnt++;
-						
-						
+							
 							l.getWorld().loadChunk(xLoc, zLoc);
 							l.getWorld().unloadChunk(xLoc, zLoc, true);
-						
-							/*if(hyper)
-								Thread.sleep(1);
-							else
-								Thread.sleep(5);*/
+							
 							Thread.sleep(4);
 
 						}
@@ -244,12 +237,10 @@ public class MapLoader extends JavaPlugin {
 					freeMem = rt.freeMemory() / 1024;
 					log.info("Memory left: "	+ freeMem + " kb");
 					log.info("Starting garbage collection... ");
-					rt.gc();
-					if(hyper && freeMem > 20000)
-						Thread.sleep(10);
-					else
-						Thread.sleep(1000);
 					
+					
+					Thread.sleep(1000);
+					rt.gc();
 					
 					long limit = memUsed > 10000 ? memUsed : 10000;
 					
@@ -261,6 +252,88 @@ public class MapLoader extends JavaPlugin {
 					
 					log.info("Memory freed: "
 							+ (rt.freeMemory() / 1024 - freeMem) + "kb");
+
+				}
+
+			} catch (Exception e) {
+				log.severe("Unexpected error: " + e.getMessage());
+				e.printStackTrace();
+			} finally {
+
+				Bukkit.broadcastMessage("Finished loading chunks, took " + (System.currentTimeMillis() - time) / 60000.0 + " minutes ");
+				if (getServer().getPluginManager().getPlugin("dynmap") != null)
+					getServer().getPluginManager().enablePlugin(
+							getServer().getPluginManager().getPlugin("dynmap"));
+				l.getWorld().save();
+				
+				loader = null;
+			}
+		}
+
+	}
+	
+	private class HyperLoader extends Loader {
+
+		public HyperLoader(Location l, int r) {
+			super(l, r);
+		}
+
+		@Override
+		public void run() {
+			long time = System.currentTimeMillis();
+			Runtime rt = Runtime.getRuntime();
+
+			terminate = false;
+			int cnt = 0;
+			int xLoc, zLoc;
+			long memUsed;
+
+			try {
+				long freeMem = rt.freeMemory() / 1024;
+				for (int x = -r; x < r; x++) {
+					
+					synchronized (l.getWorld()){
+						for (int z = -r; z < r; z++) {
+
+							if (terminate)
+								break;
+
+							xLoc = l.getChunk().getX() + x;
+							zLoc = l.getChunk().getZ() + z;
+							cnt++;
+						
+						
+							l.getWorld().loadChunk(xLoc, zLoc);
+							l.getWorld().unloadChunk(xLoc, zLoc, true);
+							
+							Thread.sleep(1);
+							
+							
+							if(rt.freeMemory() / 1024 < 200000){
+								memUsed = freeMem - rt.freeMemory() / 1024;
+								log.info("");
+								log.info("Loaded " + cnt + " of " + (r+r)*(r+r) + " chunks.");
+								log.info("Memory used: " + memUsed + " kb, per chunk: " + memUsed / (2 * r) + " kb");
+								log.info("Starting garbage collection... ");
+								
+								Thread.sleep(5000);
+								rt.gc();
+								log.info("Memory freed: " + (rt.freeMemory() / 1024 - freeMem) + "kb");
+								
+								freeMem = rt.freeMemory() / 1024;
+							}
+							
+							
+							
+
+						}
+						
+						log.info("Memory left: "	+ rt.freeMemory() / 1024 + " kb. On chunk " + cnt);
+						
+						if (terminate)
+							break;
+					}
+					
 
 				}
 
