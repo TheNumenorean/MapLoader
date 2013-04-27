@@ -1,0 +1,26 @@
+main: net.lotrcraft.maploader.MapLoader
+author: Numenorean95
+name: MapLoader
+version: 1.1.0
+
+commands:
+    load:
+        description: Loads chunks around radius.
+        aliases: l
+        usage: |
+            /<command> <world> <radius>
+            /<command> <world> <radius> <x> <z>
+        permission: ml.load
+    hyperload:
+        description: Loads chunks around radius using all availible resources.
+        aliases: l
+        usage: |
+            /<command> <world> <radius>
+            /<command> <world> <radius> <x> <z>
+        permission: ml.load
+    terminate:
+        description: Terminate running loader.
+        aliases: t
+        usage: |
+            /<command>
+        permission: ml.terminate
