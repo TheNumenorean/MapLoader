@@ -1,5 +1,6 @@
 package net.lotrcraft.maploader;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -24,10 +25,16 @@ public class MapLoader extends JavaPlugin {
 	public void onDisable(){
 		if(loader != null)
 			loader.terminate();
-		log.info("MapLoader dissabled!");
+		log.info("MapLoader disabled!");
 	}
 
 	public void onEnable() {
+		try {
+			Metrics metrics = new Metrics(this);
+			metrics.start();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 		log.info("MapLoader enabled!");
 	}
 
