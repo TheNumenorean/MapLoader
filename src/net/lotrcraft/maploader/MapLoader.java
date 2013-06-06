@@ -214,7 +214,6 @@ public class MapLoader extends JavaPlugin {
 
 			terminate = false;
 			int cnt = 0;
-			int xLoc, zLoc;
 			long memUsed;
 
 			try {
@@ -232,8 +231,7 @@ public class MapLoader extends JavaPlugin {
 							cls.add(cl);
 							
 							Bukkit.getScheduler().scheduleSyncDelayedTask(ml, cl);
-							
-							Thread.sleep(4);
+							cnt++;
 
 					}
 					
@@ -260,11 +258,9 @@ public class MapLoader extends JavaPlugin {
 					log.info("Memory left: "	+ freeMem + " kb");
 					log.info("Starting garbage collection... ");
 					
-					
-					Thread.sleep(1000);
 					rt.gc();
 					
-					long limit = memUsed > 10000 ? memUsed : 10000;
+					long limit = memUsed > 20000 ? memUsed : 10000;
 					
 					while (rt.freeMemory() / 1024 < limit && !terminate){
 						log.info("Out of memory, waiting...");
@@ -272,8 +268,7 @@ public class MapLoader extends JavaPlugin {
 						rt.gc();
 					}
 					
-					log.info("Memory freed: "
-							+ (rt.freeMemory() / 1024 - freeMem) + "kb");
+					log.info("Memory freed: " + (rt.freeMemory() / 1024 - freeMem) + "kb");
 
 				}
 
