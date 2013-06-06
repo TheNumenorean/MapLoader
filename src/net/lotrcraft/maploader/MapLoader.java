@@ -1,6 +1,9 @@
 package net.lotrcraft.maploader;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -181,7 +184,7 @@ public class MapLoader extends JavaPlugin {
 		
 		w.save();
 		
-		loader = command.getName().equals("hyperload") ? new HyperLoader(l, r) : new Loader(l, r) ;
+		loader = command.getName().equals("hyperload") ? new HyperLoader(l, r, this) : new Loader(l, r, this) ;
 		loader.start();
 
 		return true;
@@ -192,10 +195,12 @@ public class MapLoader extends JavaPlugin {
 		protected boolean terminate;
 		protected Location l;
 		protected int r;
+		private MapLoader ml;
 
-		public Loader(Location l, int r) {
+		public Loader(Location l, int r, MapLoader ml) {
 			this.l = l;
 			this.r = r;
+			this.ml = ml;
 		}
 
 		public void terminate() {
@@ -215,22 +220,32 @@ public class MapLoader extends JavaPlugin {
 			try {
 				for (int x = -r; x < r; x++) {
 					long freeMem = rt.freeMemory() / 1024;
-					synchronized (l.getWorld()){
-						for (int z = -r; z < r; z++) {
+					
+					List<ChunkLoader> cls = Collections.synchronizedList(new ArrayList<ChunkLoader>());
+					
+					for (int z = -r; z < r; z++) {
 
 							if (terminate)
 								break;
-
-							xLoc = l.getChunk().getX() + x;
-							zLoc = l.getChunk().getZ() + z;
-							cnt++;
 							
-							l.getWorld().loadChunk(xLoc, zLoc);
-							l.getWorld().unloadChunk(xLoc, zLoc, true);
+							ChunkLoader cl = new ChunkLoader(x, z, l, cls);
+							cls.add(cl);
+							
+							Bukkit.getScheduler().scheduleSyncDelayedTask(ml, cl);
 							
 							Thread.sleep(4);
 
-						}
+					}
+					
+					Thread.sleep(1000);
+					
+					while(!cls.isEmpty()){
+						
+						if (terminate)
+							break;
+						
+						log.info("Waiting for system to catch up...");
+						Thread.sleep(1000);
 					}
 					
 					log.info("");
@@ -281,8 +296,8 @@ public class MapLoader extends JavaPlugin {
 	
 	private class HyperLoader extends Loader {
 
-		public HyperLoader(Location l, int r) {
-			super(l, r);
+		public HyperLoader(Location l, int r, MapLoader ml) {
+			super(l, r, ml);
 		}
 
 		@Override
@@ -359,6 +374,33 @@ public class MapLoader extends JavaPlugin {
 			}
 		}
 
+	}
+	
+	private class ChunkLoader implements Runnable{
+		
+		private Location l;
+		private int x;
+		private int z;
+		private List<ChunkLoader> cls;
+
+		public ChunkLoader(int x, int z, Location l, List<ChunkLoader> cls2){
+			this.cls = cls2;
+			this.x = x;
+			this.z = z;
+			this.l = l;
+		}
+
+		@Override
+		public void run() {
+			int xLoc = l.getChunk().getX() + x;
+			int zLoc = l.getChunk().getZ() + z;
+			
+			l.getWorld().loadChunk(xLoc, zLoc);
+			l.getWorld().unloadChunk(xLoc, zLoc, true);
+			
+			cls.remove(this);
+			
+		}
 	}
 
 }
