@@ -232,7 +232,8 @@ public class MapLoader extends JavaPlugin {
 							
 							Bukkit.getScheduler().scheduleSyncDelayedTask(ml, cl);
 							cnt++;
-
+							
+							Thread.sleep(4);
 					}
 					
 					Thread.sleep(1000);
@@ -260,7 +261,7 @@ public class MapLoader extends JavaPlugin {
 					
 					rt.gc();
 					
-					long limit = memUsed > 20000 ? memUsed : 10000;
+					long limit = memUsed > 20000 ? memUsed : 20000;
 					
 					while (rt.freeMemory() / 1024 < limit && !terminate){
 						log.info("Out of memory, waiting...");
@@ -396,6 +397,43 @@ public class MapLoader extends JavaPlugin {
 			cls.remove(this);
 			
 		}
+	}
+	
+	private String concatWorldName(String[] args, int start){
+		
+		String tmp = args[start];
+		
+		//The first char isnt a quote
+		if(tmp.charAt(0) != '"')
+			return tmp;
+		
+		//There are multiple quotes in one arg
+		if(tmp.lastIndexOf('"') != 0)
+			return tmp;
+		
+		int end = -1;
+		for(int y = start + 1; y < args.length; y++){
+			tmp = tmp + args[y];
+			if(args[y].indexOf('"') != -1){
+				end = y;
+				break;
+			}
+		}
+		
+		if(end == -1)
+			return args[start];
+		
+		for(int y = start + 1; y <= end; y++)
+			remove(args, y);
+		
+		return args[start] = tmp.replaceAll("\"", "");
+		
+	}
+	
+	private void remove(String[] s, int i){
+		for(int y = i; y < s.length - 1; y++)
+			s[y] = s[y+1];
+		s[s.length - 1] = "";
 	}
 
 }
