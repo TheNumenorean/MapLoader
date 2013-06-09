@@ -2,6 +2,7 @@ package net.lotrcraft.maploader;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
@@ -70,9 +71,14 @@ public class MapLoader extends JavaPlugin {
 				if(loader != null)
 					log.info("Already loading!");
 				
+				args = concatWorldName(args, 0);
+				
+				if (args.length < 2)
+					return false;
+				
 				w = Bukkit.getWorld(args[0]);
 				if (w == null) {
-					log.info("Invalid world!");
+					log.info("Invalid world " + args[0] + "!");
 					return true;
 				}
 
@@ -128,6 +134,11 @@ public class MapLoader extends JavaPlugin {
 					sender.sendMessage(ChatColor.DARK_RED + "You may not do this!");
 					return true;
 				}
+				
+				args = concatWorldName(args, 0);
+				
+				if (args.length < 2)
+					return false;
 
 				w = Bukkit.getWorld(args[0]);
 				if (w == null) {
@@ -178,9 +189,9 @@ public class MapLoader extends JavaPlugin {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
-		for(Player p : getServer().getOnlinePlayers())
-			p.kickPlayer(ChatColor.BLUE + "Hypermode has been Activated! Please check back in a bit.");
+		if(command.getName().equals("hyperload"))
+			for(Player p : getServer().getOnlinePlayers())
+				p.kickPlayer(ChatColor.BLUE + "Hypermode has been Activated! Please check back in a bit.");
 		
 		w.save();
 		
@@ -195,7 +206,7 @@ public class MapLoader extends JavaPlugin {
 		protected boolean terminate;
 		protected Location l;
 		protected int r;
-		private MapLoader ml;
+		protected MapLoader ml;
 
 		public Loader(Location l, int r, MapLoader ml) {
 			this.l = l;
@@ -298,6 +309,8 @@ public class MapLoader extends JavaPlugin {
 
 		@Override
 		public void run() {
+			
+			List<ChunkLoader> cls = Collections.synchronizedList(new ArrayList<ChunkLoader>());
 			long time = System.currentTimeMillis();
 			Runtime rt = Runtime.getRuntime();
 
@@ -310,47 +323,39 @@ public class MapLoader extends JavaPlugin {
 				long freeMem = rt.freeMemory() / 1024;
 				for (int x = -r; x < r; x++) {
 					
-					synchronized (l.getWorld()){
-						for (int z = -r; z < r; z++) {
-
-							if (terminate)
-								break;
-
-							xLoc = l.getChunk().getX() + x;
-							zLoc = l.getChunk().getZ() + z;
-							cnt++;
-						
-						
-							l.getWorld().loadChunk(xLoc, zLoc);
-							l.getWorld().unloadChunk(xLoc, zLoc, true);
-							
-							Thread.sleep(1);
-							
-							
-							if(rt.freeMemory() / 1024 < 200000){
-								memUsed = freeMem - rt.freeMemory() / 1024;
-								log.info("");
-								log.info("Loaded " + cnt + " of " + (r+r)*(r+r) + " chunks.");
-								log.info("Memory used: " + memUsed + " kb, per chunk: " + memUsed / (2 * r) + " kb");
-								log.info("Starting garbage collection... ");
-								
-								Thread.sleep(5000);
-								rt.gc();
-								log.info("Memory freed: " + (rt.freeMemory() / 1024 - freeMem) + "kb");
-								
-								freeMem = rt.freeMemory() / 1024;
-							}
-							
-							
-							
-
-						}
-						
-						log.info("Memory left: "	+ rt.freeMemory() / 1024 + " kb. On chunk " + cnt);
-						
+					
+					for (int z = -r; z < r; z++) {
 						if (terminate)
 							break;
+						
+						ChunkLoader cl = new ChunkLoader(x, z, l, cls);
+						cls.add(cl);
+						
+						Bukkit.getScheduler().scheduleSyncDelayedTask(ml, cl);
+						cnt++;
+						
+						Thread.sleep(1);
+						
+						if(rt.freeMemory() / 1024 < 200000){
+							memUsed = freeMem - rt.freeMemory() / 1024;
+							log.info("");
+							log.info("Loaded " + cnt + " of " + (r+r)*(r+r) + " chunks.");
+							log.info("Memory used: " + memUsed + " kb, per chunk: " + memUsed / (2 * r) + " kb");
+							log.info("Starting garbage collection... ");
+							
+							Thread.sleep(5000);
+							rt.gc();
+							log.info("Memory freed: " + (rt.freeMemory() / 1024 - freeMem) + "kb");
+							
+							freeMem = rt.freeMemory() / 1024;
+						}
+												
 					}
+					
+					log.info("Memory left: "	+ rt.freeMemory() / 1024 + " kb. On chunk " + cnt);
+					
+					if (terminate)
+						break;
 					
 
 				}
@@ -399,34 +404,38 @@ public class MapLoader extends JavaPlugin {
 		}
 	}
 	
-	private String concatWorldName(String[] args, int start){
+	private String[] concatWorldName(String[] args, int start){
 		
 		String tmp = args[start];
 		
-		//The first char isnt a quote
-		if(tmp.charAt(0) != '"')
-			return tmp;
-		
-		//There are multiple quotes in one arg
-		if(tmp.lastIndexOf('"') != 0)
-			return tmp;
+		//The first char isnt a quote or There are multiple quotes in one arg
+		if(tmp.charAt(0) != '"' || tmp.lastIndexOf('"') != 0){
+			args[start] = tmp.replaceAll("\"", "");
+			return args;
+		}
 		
 		int end = -1;
 		for(int y = start + 1; y < args.length; y++){
-			tmp = tmp + args[y];
+			tmp = tmp + " " + args[y];
 			if(args[y].indexOf('"') != -1){
 				end = y;
 				break;
 			}
 		}
 		
-		if(end == -1)
-			return args[start];
+		if(end == -1){
+			args[start] = args[start].replaceAll("\"", "");
+			return args;
+		}
 		
 		for(int y = start + 1; y <= end; y++)
 			remove(args, y);
+
+		args[start] = tmp.replaceAll("\"", "");
+
+		args = Arrays.copyOf(args, args.length - (end - start));
 		
-		return args[start] = tmp.replaceAll("\"", "");
+		return args;
 		
 	}
 	
