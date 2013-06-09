@@ -316,7 +316,6 @@ public class MapLoader extends JavaPlugin {
 
 			terminate = false;
 			int cnt = 0;
-			int xLoc, zLoc;
 			long memUsed;
 
 			try {
@@ -404,18 +403,18 @@ public class MapLoader extends JavaPlugin {
 		}
 	}
 	
-	private String[] concatWorldName(String[] args, int start){
+	private String[] concatWorldName(String[] args, int worldStartIndex){
 		
-		String tmp = args[start];
+		String tmp = args[worldStartIndex];
 		
 		//The first char isnt a quote or There are multiple quotes in one arg
 		if(tmp.charAt(0) != '"' || tmp.lastIndexOf('"') != 0){
-			args[start] = tmp.replaceAll("\"", "");
+			args[worldStartIndex] = tmp.replaceAll("\"", "");
 			return args;
 		}
 		
 		int end = -1;
-		for(int y = start + 1; y < args.length; y++){
+		for(int y = worldStartIndex + 1; y < args.length; y++){
 			tmp = tmp + " " + args[y];
 			if(args[y].indexOf('"') != -1){
 				end = y;
@@ -424,16 +423,16 @@ public class MapLoader extends JavaPlugin {
 		}
 		
 		if(end == -1){
-			args[start] = args[start].replaceAll("\"", "");
+			args[worldStartIndex] = args[worldStartIndex].replaceAll("\"", "");
 			return args;
 		}
 		
-		for(int y = start + 1; y <= end; y++)
+		for(int y = worldStartIndex + 1; y <= end; y++)
 			remove(args, y);
 
-		args[start] = tmp.replaceAll("\"", "");
+		args[worldStartIndex] = tmp.replaceAll("\"", "");
 
-		args = Arrays.copyOf(args, args.length - (end - start));
+		args = Arrays.copyOf(args, args.length - (end - worldStartIndex));
 		
 		return args;
 		
