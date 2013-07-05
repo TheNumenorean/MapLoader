@@ -228,6 +228,8 @@ public class MapLoader extends JavaPlugin {
 			long memUsed;
 
 			try {
+				//asdasdasd
+				
 				for (int x = -r; x < r; x++) {
 					long freeMem = rt.freeMemory() / 1024;
 					
@@ -254,8 +256,9 @@ public class MapLoader extends JavaPlugin {
 						if (terminate)
 							break;
 						
-						log.info("Waiting for system to catch up...");
-						Thread.sleep(1000);
+						log.info("Waiting for system to catch up, " + cls.size() + " chunks left.");
+						Thread.sleep(2000);
+						rt.gc();
 					}
 					
 					log.info("");
