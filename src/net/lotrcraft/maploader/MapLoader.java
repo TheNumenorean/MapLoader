@@ -197,7 +197,7 @@ public class MapLoader extends JavaPlugin {
 		
 		w.save();
 		
-		loader = command.getName().equals("hyperload") ? new HyperLoader(l, r, this) : new Loader(l, r, this) ;
+		loader = command.getName().equals("hyperload") ? new HyperLoader(l, r, this, 100) : new Loader(l, r, this, 100) ;
 		loader.start();
 
 		return true;
@@ -209,11 +209,13 @@ public class MapLoader extends JavaPlugin {
 		protected Location l;
 		protected int r;
 		protected MapLoader ml;
+		protected int size;
 
-		public Loader(Location l, int r, MapLoader ml) {
+		public Loader(Location l, int r, MapLoader ml, int size) {
 			this.l = l;
 			this.r = r;
 			this.ml = ml;
+			this.size = size;
 		}
 
 		public void terminate() {
@@ -249,7 +251,7 @@ public class MapLoader extends JavaPlugin {
 					
 					long memUsed;
 					ChunkLoader cl;
-					int amt = 100;
+					int amt = size;
 					while(amt != 0 && (cl = queue.poll()) != null){
 						
 						if (terminate)
@@ -280,7 +282,7 @@ public class MapLoader extends JavaPlugin {
 					log.info("");
 					memUsed = freeMem - rt.freeMemory() / 1024;
 					log.info("Loaded " + cnt + " of " + (r+r)*(r+r) + " chunks.");
-					log.info("Memory used: " + memUsed + " kb, per chunk: " + memUsed / (2 * r) + " kb");
+					log.info("Memory used: " + memUsed + " kb, per chunk: " + memUsed / (size) + " kb");
 					freeMem = rt.freeMemory() / 1024;
 					log.info("Memory left: "	+ freeMem + " kb");
 					log.info("Starting garbage collection... ");
@@ -311,7 +313,15 @@ public class MapLoader extends JavaPlugin {
 				if (getServer().getPluginManager().getPlugin("dynmap") != null)
 					getServer().getPluginManager().enablePlugin(
 							getServer().getPluginManager().getPlugin("dynmap"));
-				l.getWorld().save();
+				Bukkit.getScheduler().scheduleSyncDelayedTask(ml, new Runnable(){
+
+					@Override
+					public void run() {
+						l.getWorld().save();
+						
+					}
+					
+				});
 				
 				loader = null;
 			}
@@ -321,8 +331,8 @@ public class MapLoader extends JavaPlugin {
 	
 	private class HyperLoader extends Loader {
 
-		public HyperLoader(Location l, int r, MapLoader ml) {
-			super(l, r, ml);
+		public HyperLoader(Location l, int r, MapLoader ml, int size) {
+			super(l, r, ml, size);
 		}
 
 		@Override
@@ -386,7 +396,15 @@ public class MapLoader extends JavaPlugin {
 				if (getServer().getPluginManager().getPlugin("dynmap") != null)
 					getServer().getPluginManager().enablePlugin(
 							getServer().getPluginManager().getPlugin("dynmap"));
-				l.getWorld().save();
+				Bukkit.getScheduler().scheduleSyncDelayedTask(ml, new Runnable(){
+
+					@Override
+					public void run() {
+						l.getWorld().save();
+						
+					}
+					
+				});
 				
 				loader = null;
 			}
