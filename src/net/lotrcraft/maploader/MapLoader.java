@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -225,47 +227,57 @@ public class MapLoader extends JavaPlugin {
 
 			terminate = false;
 			int cnt = 0;
-			long memUsed;
+			
 
 			try {
-				//asdasdasd
+				List<ChunkLoader> current = Collections.synchronizedList(new ArrayList<ChunkLoader>());
+				long freeMem = rt.freeMemory() / 1024;
 				
-				for (int x = -r; x < r; x++) {
-					long freeMem = rt.freeMemory() / 1024;
-					
-					List<ChunkLoader> cls = Collections.synchronizedList(new ArrayList<ChunkLoader>());
-					
+				Queue<ChunkLoader> queue = new LinkedList<ChunkLoader>();
+				
+				for (int x = -r; x < r; x++){
 					for (int z = -r; z < r; z++) {
-
 							if (terminate)
 								break;
-							
-							ChunkLoader cl = new ChunkLoader(x, z, l, cls);
-							cls.add(cl);
-							
-							Bukkit.getScheduler().scheduleSyncDelayedTask(ml, cl);
-							cnt++;
-							
-							Thread.sleep(4);
+							queue.offer(new ChunkLoader(x, z, l, null));
 					}
+					if (terminate)
+						break;
+				}
+				
+				while(!queue.isEmpty()){
 					
-					Thread.sleep(1000);
-					
-					while(!cls.isEmpty()){
+					long memUsed;
+					ChunkLoader cl;
+					int amt = 100;
+					while(amt != 0 && (cl = queue.poll()) != null){
 						
 						if (terminate)
 							break;
 						
-						log.info("Waiting for system to catch up, " + cls.size() + " chunks left.");
+						current.add(cl);
+						cl.setList(current);
+						Bukkit.getScheduler().scheduleSyncDelayedTask(ml, cl);
+						cnt++;
+						
+						Thread.sleep(4);
+						
+						amt--;
+					}
+					
+					Thread.sleep(1000);
+					
+					while(!current.isEmpty()){
+						
+						if (terminate)
+							break;
+						
+						log.info("Waiting for system to catch up, " + current.size() + " chunks left.");
 						Thread.sleep(2000);
 						rt.gc();
 					}
 					
 					log.info("");
-
-					if (terminate)
-						break;
-
 					memUsed = freeMem - rt.freeMemory() / 1024;
 					log.info("Loaded " + cnt + " of " + (r+r)*(r+r) + " chunks.");
 					log.info("Memory used: " + memUsed + " kb, per chunk: " + memUsed / (2 * r) + " kb");
@@ -284,9 +296,12 @@ public class MapLoader extends JavaPlugin {
 					}
 					
 					log.info("Memory freed: " + (rt.freeMemory() / 1024 - freeMem) + "kb");
-
+					
+					if (terminate)
+						break;
+					
 				}
-
+				
 			} catch (Exception e) {
 				log.severe("Unexpected error: " + e.getMessage());
 				e.printStackTrace();
@@ -392,6 +407,10 @@ public class MapLoader extends JavaPlugin {
 			this.z = z;
 			this.l = l;
 		}
+		
+		public void setList(List<ChunkLoader> list){
+			cls = list;
+		}
 
 		@Override
 		public void run() {
@@ -401,7 +420,8 @@ public class MapLoader extends JavaPlugin {
 			l.getWorld().loadChunk(xLoc, zLoc);
 			l.getWorld().unloadChunk(xLoc, zLoc, true);
 			
-			cls.remove(this);
+			if(cls != null)
+				cls.remove(this);
 			
 		}
 	}
