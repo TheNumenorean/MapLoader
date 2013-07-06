@@ -245,7 +245,7 @@ public class MapLoader extends JavaPlugin {
 
 			terminate = false;
 			int cnt = 0;
-
+			
 			try {
 				List<ChunkLoader> current = Collections
 						.synchronizedList(new ArrayList<ChunkLoader>());
@@ -296,21 +296,20 @@ public class MapLoader extends JavaPlugin {
 								+ current.size() + " chunks left.");
 						Thread.sleep(2000);
 						rt.gc();
+						size--;
 					}
 
 					log.info("");
 					memUsed = freeMem - rt.freeMemory() / 1024;
-					log.info("Loaded " + cnt + " of " + (r + r) * (r + r)
-							+ " chunks.");
-					log.info("Memory used: " + memUsed + " kb, per chunk: "
-							+ memUsed / (size) + " kb");
+					log.info("Loaded " + cnt + " of " + (r + r) * (r + r) + " chunks.");
+					log.info("Memory used: " + memUsed + " kb, per chunk: " + memUsed / (size) + " kb");
 					freeMem = rt.freeMemory() / 1024;
 					log.info("Memory left: " + freeMem + " kb");
 					log.info("Starting garbage collection... ");
 
 					rt.gc();
 
-					long limit = memUsed > 20000 ? memUsed : 20000;
+					long limit = memUsed > 30000 ? memUsed : 30000;
 
 					while (rt.freeMemory() / 1024 < limit && !terminate) {
 						log.info("Out of memory, waiting...");
@@ -345,20 +344,18 @@ public class MapLoader extends JavaPlugin {
 				Bukkit.broadcastMessage("Finished loading chunks, took "
 						+ (System.currentTimeMillis() - time) / 60000.0
 						+ " minutes ");
-				if (getServer().getPluginManager().getPlugin("dynmap") != null)
-					getServer().getPluginManager().enablePlugin(
-							getServer().getPluginManager().getPlugin("dynmap"));
-				Bukkit.getScheduler().scheduleSyncDelayedTask(ml,
-						new Runnable() {
+				
+				Bukkit.getScheduler().scheduleSyncDelayedTask(ml, new Runnable() {
 
 							@Override
 							public void run() {
 								l.getWorld().save();
-
 							}
 
-						});
-
+				});
+				if (getServer().getPluginManager().getPlugin("dynmap") != null)
+					getServer().getPluginManager().enablePlugin(getServer().getPluginManager().getPlugin("dynmap"));
+				
 				loader = null;
 			}
 		}
