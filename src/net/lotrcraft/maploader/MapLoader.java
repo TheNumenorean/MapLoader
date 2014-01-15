@@ -1,6 +1,5 @@
 package net.lotrcraft.maploader;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,28 +25,25 @@ public class MapLoader extends JavaPlugin {
 
 	private static final int DEFAULT_LOAD_SIZE = 100;
 
+	@Override
 	public void onLoad() {
 		log = getLogger();
 	}
 
+	@Override
 	public void onDisable() {
 		if (loader != null)
 			loader.terminate();
 		log.info("MapLoader disabled!");
 	}
 
+	@Override
 	public void onEnable() {
-		try {
-			Metrics metrics = new Metrics(this);
-			metrics.start();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
 		log.info("MapLoader enabled!");
 	}
 
-	public boolean onCommand(CommandSender sender, Command command,
-			String label, String[] args) {
+	@Override
+	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
 		int r, x, z;
 		World w;
@@ -68,8 +64,7 @@ public class MapLoader extends JavaPlugin {
 				return true;
 
 			}
-			if (command.getName().equals("load")
-					|| command.getName().equals("hyperload")) {
+			if (command.getName().equals("load") || command.getName().equals("hyperload")) {
 
 				if (args.length == 0)
 					return false;
@@ -124,14 +119,12 @@ public class MapLoader extends JavaPlugin {
 				} else {
 					loader.terminate();
 					loader = null;
-					sender.sendMessage(ChatColor.DARK_PURPLE
-							+ "Current loader terminated.");
+					sender.sendMessage(ChatColor.DARK_PURPLE + "Current loader terminated.");
 				}
 
 				return true;
 
-			} else if (command.getName().equals("load")
-					|| command.getName().equals("hyperload")) {
+			} else if (command.getName().equals("load") || command.getName().equals("hyperload")) {
 
 				if (args.length == 0)
 					return false;
@@ -140,8 +133,7 @@ public class MapLoader extends JavaPlugin {
 					sender.sendMessage("Already loading!");
 
 				if (!sender.hasPermission("ml.load")) {
-					sender.sendMessage(ChatColor.DARK_RED
-							+ "You may not do this!");
+					sender.sendMessage(ChatColor.DARK_RED + "You may not do this!");
 					return true;
 				}
 
@@ -164,12 +156,9 @@ public class MapLoader extends JavaPlugin {
 				}
 
 				if (args.length <= 2) {
-					sender.sendMessage(ChatColor.GREEN
-							+ "Using your location as center");
-					x = this.getServer().getPlayer(sender.getName())
-							.getLocation().getBlockX();
-					z = this.getServer().getPlayer(sender.getName())
-							.getLocation().getBlockZ();
+					sender.sendMessage(ChatColor.GREEN + "Using your location as center");
+					x = this.getServer().getPlayer(sender.getName()).getLocation().getBlockX();
+					z = this.getServer().getPlayer(sender.getName()).getLocation().getBlockZ();
 				} else if (args.length >= 4) {
 					try {
 						x = Integer.parseInt(args[2]);
@@ -189,15 +178,10 @@ public class MapLoader extends JavaPlugin {
 
 		l = new Location(w, x, 0, z);
 		if (getServer().getPluginManager().getPlugin("dynmap") != null)
-			getServer().getPluginManager().disablePlugin(
-					getServer().getPluginManager().getPlugin("dynmap"));
-		getServer().broadcastMessage(
-				ChatColor.AQUA + "Loading " + (r + r) * (r + r)
-						+ " chunks from X:" + l.getBlockX() + " and Z:"
-						+ l.getBlockZ());
+			getServer().getPluginManager().disablePlugin(getServer().getPluginManager().getPlugin("dynmap"));
+		getServer().broadcastMessage(ChatColor.AQUA + "Loading " + (r + r) * (r + r) + " chunks from X:" + l.getBlockX() + " and Z:" + l.getBlockZ());
 		if (command.getName().equals("hyperload"))
-			getServer().broadcastMessage(
-					ChatColor.GOLD + "Warp Speed, Mr. Sulu.");
+			getServer().broadcastMessage(ChatColor.GOLD + "Warp Speed, Mr. Sulu.");
 
 		try {
 			Thread.sleep(2000);
@@ -206,14 +190,11 @@ public class MapLoader extends JavaPlugin {
 		}
 		if (command.getName().equals("hyperload"))
 			for (Player p : getServer().getOnlinePlayers())
-				p.kickPlayer(ChatColor.BLUE
-						+ "Hypermode has been Activated! Please check back in a bit.");
+				p.kickPlayer(ChatColor.BLUE + "Hypermode has been Activated! Please check back in a bit.");
 
 		w.save();
 
-		loader = command.getName().equals("hyperload") ? new HyperLoader(l, r,
-				this, DEFAULT_LOAD_SIZE) : new Loader(l, r, this,
-				DEFAULT_LOAD_SIZE);
+		loader = command.getName().equals("hyperload") ? new HyperLoader(l, r, this, DEFAULT_LOAD_SIZE) : new Loader(l, r, this, DEFAULT_LOAD_SIZE);
 		loader.start();
 
 		return true;
@@ -245,10 +226,9 @@ public class MapLoader extends JavaPlugin {
 
 			terminate = false;
 			int cnt = 0;
-			
+
 			try {
-				List<ChunkLoader> current = Collections
-						.synchronizedList(new ArrayList<ChunkLoader>());
+				List<ChunkLoader> current = Collections.synchronizedList(new ArrayList<ChunkLoader>());
 				long freeMem = rt.freeMemory() / 1024;
 
 				Queue<ChunkLoader> queue = new LinkedList<ChunkLoader>();
@@ -292,8 +272,7 @@ public class MapLoader extends JavaPlugin {
 						if (terminate)
 							break;
 
-						log.info("Waiting for system to catch up, "
-								+ current.size() + " chunks left.");
+						log.info("Waiting for system to catch up, " + current.size() + " chunks left.");
 						Thread.sleep(2000);
 						rt.gc();
 						size--;
@@ -318,8 +297,7 @@ public class MapLoader extends JavaPlugin {
 						rt.gc();
 					}
 
-					log.info("Memory freed: "
-							+ (rt.freeMemory() / 1024 - freeMem) + "kb");
+					log.info("Memory freed: " + (rt.freeMemory() / 1024 - freeMem) + "kb");
 
 					if (freeMem > 200000) {
 						if (memUsed < 5000)
@@ -341,21 +319,19 @@ public class MapLoader extends JavaPlugin {
 				e.printStackTrace();
 			} finally {
 
-				Bukkit.broadcastMessage("Finished loading chunks, took "
-						+ (System.currentTimeMillis() - time) / 60000.0
-						+ " minutes ");
-				
+				Bukkit.broadcastMessage("Finished loading chunks, took " + (System.currentTimeMillis() - time) / 60000.0 + " minutes ");
+
 				Bukkit.getScheduler().scheduleSyncDelayedTask(ml, new Runnable() {
 
-							@Override
-							public void run() {
-								l.getWorld().save();
-							}
+					@Override
+					public void run() {
+						l.getWorld().save();
+					}
 
 				});
 				if (getServer().getPluginManager().getPlugin("dynmap") != null)
 					getServer().getPluginManager().enablePlugin(getServer().getPluginManager().getPlugin("dynmap"));
-				
+
 				loader = null;
 			}
 		}
@@ -371,8 +347,7 @@ public class MapLoader extends JavaPlugin {
 		@Override
 		public void run() {
 
-			List<ChunkLoader> cls = Collections
-					.synchronizedList(new ArrayList<ChunkLoader>());
+			List<ChunkLoader> cls = Collections.synchronizedList(new ArrayList<ChunkLoader>());
 			long time = System.currentTimeMillis();
 			Runtime rt = Runtime.getRuntime();
 
@@ -399,25 +374,20 @@ public class MapLoader extends JavaPlugin {
 						if (rt.freeMemory() / 1024 < 200000) {
 							memUsed = freeMem - rt.freeMemory() / 1024;
 							log.info("");
-							log.info("Loaded " + cnt + " of " + (r + r)
-									* (r + r) + " chunks.");
-							log.info("Memory used: " + memUsed
-									+ " kb, per chunk: " + memUsed / (2 * r)
-									+ " kb");
+							log.info("Loaded " + cnt + " of " + (r + r) * (r + r) + " chunks.");
+							log.info("Memory used: " + memUsed + " kb, per chunk: " + memUsed / (2 * r) + " kb");
 							log.info("Starting garbage collection... ");
 
 							Thread.sleep(5000);
 							rt.gc();
-							log.info("Memory freed: "
-									+ (rt.freeMemory() / 1024 - freeMem) + "kb");
+							log.info("Memory freed: " + (rt.freeMemory() / 1024 - freeMem) + "kb");
 
 							freeMem = rt.freeMemory() / 1024;
 						}
 
 					}
 
-					log.info("Memory left: " + rt.freeMemory() / 1024
-							+ " kb. On chunk " + cnt);
+					log.info("Memory left: " + rt.freeMemory() / 1024 + " kb. On chunk " + cnt);
 
 					if (terminate)
 						break;
@@ -429,22 +399,18 @@ public class MapLoader extends JavaPlugin {
 				e.printStackTrace();
 			} finally {
 
-				Bukkit.broadcastMessage("Finished loading chunks, took "
-						+ (System.currentTimeMillis() - time) / 60000.0
-						+ " minutes ");
+				Bukkit.broadcastMessage("Finished loading chunks, took " + (System.currentTimeMillis() - time) / 60000.0 + " minutes ");
 				if (getServer().getPluginManager().getPlugin("dynmap") != null)
-					getServer().getPluginManager().enablePlugin(
-							getServer().getPluginManager().getPlugin("dynmap"));
-				Bukkit.getScheduler().scheduleSyncDelayedTask(ml,
-						new Runnable() {
+					getServer().getPluginManager().enablePlugin(getServer().getPluginManager().getPlugin("dynmap"));
+				Bukkit.getScheduler().scheduleSyncDelayedTask(ml, new Runnable() {
 
-							@Override
-							public void run() {
-								l.getWorld().save();
+					@Override
+					public void run() {
+						l.getWorld().save();
 
-							}
+					}
 
-						});
+				});
 
 				loader = null;
 			}
@@ -454,9 +420,9 @@ public class MapLoader extends JavaPlugin {
 
 	private class ChunkLoader implements Runnable {
 
-		private Location l;
-		private int x;
-		private int z;
+		private final Location l;
+		private final int x;
+		private final int z;
 		private List<ChunkLoader> cls;
 
 		public ChunkLoader(int x, int z, Location l, List<ChunkLoader> cls2) {
