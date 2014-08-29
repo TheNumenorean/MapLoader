@@ -369,9 +369,9 @@ public class MapLoader extends JavaPlugin {
 						Bukkit.getScheduler().scheduleSyncDelayedTask(ml, cl);
 						cnt++;
 
-						Thread.sleep(1);
+						Thread.sleep(2);
 
-						if (rt.freeMemory() / 1024 < 200000) {
+						if (rt.freeMemory() / 1024 < 60000) {
 							memUsed = freeMem - rt.freeMemory() / 1024;
 							log.info("");
 							log.info("Loaded " + cnt + " of " + (r + r) * (r + r) + " chunks.");
@@ -392,6 +392,12 @@ public class MapLoader extends JavaPlugin {
 					if (terminate)
 						break;
 
+				}
+				
+				while(!cls.isEmpty()){
+					log.info("waiting for generation to finish, " + cls.size() + " left");
+					rt.gc();
+					Thread.sleep(5000);
 				}
 
 			} catch (Exception e) {
@@ -441,8 +447,9 @@ public class MapLoader extends JavaPlugin {
 			int xLoc = l.getChunk().getX() + x;
 			int zLoc = l.getChunk().getZ() + z;
 
-			l.getWorld().loadChunk(xLoc, zLoc);
-			l.getWorld().unloadChunk(xLoc, zLoc, true);
+			if(!l.getWorld().loadChunk(xLoc, zLoc, false))
+				l.getWorld().regenerateChunk(xLoc, zLoc);
+			l.getWorld().unloadChunkRequest(xLoc, zLoc);
 
 			if (cls != null)
 				cls.remove(this);
